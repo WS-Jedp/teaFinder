@@ -10,9 +10,127 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Tea {
-  id Int @id @default(autoincrement())
+model People {
+  id        Int          @id @default(autoincrement())
+  firstName String
+  lastName  String
+  birthdate DateTime
+  country   String?
+  state     String?
+  city      String?
+  gender    PersonGender
+  userId    Int          @unique
+  user      User         @relation(fields: [userId], references: [id])
+}
+
+enum PersonGender {
+  MALE
+  FEMALE
+}
+
+model User {
+  id                  Int                  @id @default(autoincrement())
+  username            String
+  email               String
+  password            String
+  rememberMeToken     String
+  personId            Int
+  person              People?
+  userRecommendations UserRecommendations?
+  surveysAnswers      UserSurveyAnswers[]
+}
+
+model UserRecommendations {
+  id                     Int     @id @default(autoincrement())
+  recommendationgroupdID String
+  userId                 Int     @unique
+  user                   User    @relation(fields: [userId], references: [id])
+  productId              Int
+  product                Product @relation(fields: [productId], references: [id])
+  createdAt             DateTime @default(now())
+}
+
+model Product {
+  id                   Int                    @id @default(autoincrement())
+  name                 String
+  description          String
+  affiliateLink        String
+  properties           Json
+  type                 ProductType
+  multimedia           MultimediaInProducts[]
+  usersRecommendations UserRecommendations[]
+}
+
+model ProductMultimedia {
+  id       Int                    @id @default(autoincrement())
+  type     ProductMultimediaType
+  url      String
+  products MultimediaInProducts[]
+}
+
+model MultimediaInProducts {
+  productId           Int
+  product             Product           @relation(fields: [productId], references: [id])
+  productMultimediaId Int
+  productMultimedia   ProductMultimedia @relation(fields: [productMultimediaId], references: [id])
+
+  @@id([productId, productMultimediaId])
+}
+
+enum ProductMultimediaType {
+  IMAGE
+  VIDEO
+}
+
+enum ProductType {
+  TEA
+}
+
+
+model Survey {
+  id  Int @id @default(autoincrement())
   name String
-  affiliateLink String
-  description String
+  description String?
+  createdAt DateTime @default(now())
+  questions SurveyQuestions[]
+  userAnswers UserSurveyAnswers[]
+} 
+
+model SurveyQuestions {
+  id  Int @id @default(autoincrement())
+  question String
+  createdAt DateTime @default(now())
+  surveyId Int @unique
+  survey Survey @relation(fields: [surveyId], references: [id])
+  type   SurveyQuestionType
+  answerOptions SurveyQuestionAnswerOptions[]
+  userAnswer UserSurveyAnswers[]
+}
+
+enum SurveyQuestionType {
+  BOOLEAN
+  ONE_CHOICE
+  MULTIPLE_CHOICE
+}
+
+
+model SurveyQuestionAnswerOptions {
+  id Int @id @default(autoincrement())
+  answer String
+  surveyQuestionId Int
+  surveyQuestion SurveyQuestions @relation(fields: [surveyQuestionId], references: [id])
+  answeredByUser UserSurveyAnswers[]
+}
+
+model UserSurveyAnswers {
+  id  Int @id @default(autoincrement())
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+  surveyId Int
+  survey Survey @relation(fields: [surveyId], references: [id])
+  questionId Int
+  question SurveyQuestions @relation(fields: [questionId], references: [id])
+  answerId Int
+  answer SurveyQuestionAnswerOptions @relation(fields: [answerId], references: [id])
+  createdAt DateTime @default(now())
 }
